@@ -143,14 +143,14 @@ const Dashboard = () => {
                 dataKey="Total Sales" 
                 fill="#3B82F6" 
                 radius={[4, 4, 0, 0]}
-                maxBarSize={40}
+                maxBarSize={50}
               />
               <Bar 
                 yAxisId="right" 
                 dataKey="Total Transactions" 
                 fill="#8B5CF6" 
                 radius={[4, 4, 0, 0]}
-                maxBarSize={40}
+                maxBarSize={50}
               />
             </BarChart>
           </ResponsiveContainer>

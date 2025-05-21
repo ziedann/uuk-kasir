@@ -1,23 +1,53 @@
 import { useState } from 'react';
-import { Package, Plus, Edit, Trash2, BarChart2, Tag } from 'lucide-react';
+import { Package, Plus, Edit, Trash2, BarChart2, Tag, Image as ImageIcon, Upload, X } from 'lucide-react';
 
 const Produk = () => {
   const [products, setProducts] = useState([
-    { id: 1, name: 'Kopi Hitam', price: 10000, stock: 50, category: 'Minuman' },
-    { id: 2, name: 'Kopi Susu', price: 15000, stock: 45, category: 'Minuman' },
-    { id: 3, name: 'Teh Manis', price: 8000, stock: 60, category: 'Minuman' },
-    { id: 4, name: 'Roti Bakar', price: 12000, stock: 25, category: 'Makanan' }
+    {
+      id: 1,
+      name: 'Kopi Hitam',
+      price: 10000,
+      stock: 50,
+      category: 'Minuman',
+      image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=100&h=100&fit=crop'
+    },
+    {
+      id: 2,
+      name: 'Kopi Susu',
+      price: 15000,
+      stock: 45,
+      category: 'Minuman',
+      image: 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=100&h=100&fit=crop'
+    },
+    {
+      id: 3,
+      name: 'Teh Manis',
+      price: 8000,
+      stock: 60,
+      category: 'Minuman',
+      image: 'https://images.unsplash.com/photo-1564890369478-c89ca6d9cde9?w=100&h=100&fit=crop'
+    },
+    {
+      id: 4,
+      name: 'Roti Bakar',
+      price: 12000,
+      stock: 25,
+      category: 'Makanan',
+      image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=100&h=100&fit=crop'
+    }
   ]);
-  
+
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     price: '',
     stock: '',
-    category: ''
+    category: '',
+    image: null
   });
-  
+  const [previewImage, setPreviewImage] = useState(null);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -25,54 +55,79 @@ const Produk = () => {
       [name]: value
     });
   };
-  
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData({
+        ...formData,
+        image: file
+      });
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewImage(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleAddProduct = () => {
     setEditingProduct(null);
     setFormData({
       name: '',
       price: '',
       stock: '',
-      category: ''
+      category: '',
+      image: null
     });
+    setPreviewImage(null);
     setShowForm(true);
   };
-  
+
   const handleEditProduct = (product) => {
     setEditingProduct(product);
     setFormData({
       name: product.name,
       price: product.price,
       stock: product.stock,
-      category: product.category
+      category: product.category,
+      image: null
     });
+    setPreviewImage(product.image);
     setShowForm(true);
   };
-  
+
   const handleDeleteProduct = (id) => {
     if (window.confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
       setProducts(products.filter(product => product.id !== id));
     }
   };
-  
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.price || !formData.stock || !formData.category) {
       alert('Semua field harus diisi');
       return;
     }
-    
+
+    // In a real app, you would upload the image to your server here
+    // For now, we'll use the preview image URL as the image path
+    const imagePath = previewImage || '/images/products/placeholder.jpg';
+
     if (editingProduct) {
       // Update existing product
-      setProducts(products.map(product => 
-        product.id === editingProduct.id 
-          ? { 
-              ...product, 
-              name: formData.name,
-              price: parseFloat(formData.price),
-              stock: parseInt(formData.stock),
-              category: formData.category
-            } 
+      setProducts(products.map(product =>
+        product.id === editingProduct.id
+          ? {
+            ...product,
+            name: formData.name,
+            price: parseFloat(formData.price),
+            stock: parseInt(formData.stock),
+            category: formData.category,
+            image: imagePath
+          }
           : product
       ));
     } else {
@@ -82,23 +137,25 @@ const Produk = () => {
         name: formData.name,
         price: parseFloat(formData.price),
         stock: parseInt(formData.stock),
-        category: formData.category
+        category: formData.category,
+        image: imagePath
       };
-      
+
       setProducts([...products, newProduct]);
     }
-    
+
     setShowForm(false);
     setEditingProduct(null);
+    setPreviewImage(null);
   };
-  
+
   const categories = [...new Set(products.map(product => product.category))];
 
   return (
     <div className="py-8 px-6">
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-2xl font-medium text-gray-800">Produk</h2>
-        <button 
+        <button
           onClick={handleAddProduct}
           className="flex items-center justify-center bg-blue-500 text-white px-4 py-2 rounded-xl hover:bg-blue-600 transition-colors"
         >
@@ -106,95 +163,159 @@ const Produk = () => {
           <span>Tambah Produk</span>
         </button>
       </div>
-      
+
+      {/* Modal */}
       {showForm && (
-        <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
-          <div className="flex items-center mb-6">
-            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mr-3">
-              <Package size={18} />
-            </div>
-            <h3 className="text-lg font-medium text-gray-800">
-              {editingProduct ? 'Edit Produk' : 'Tambah Produk Baru'}
-            </h3>
-          </div>
-          
-          <form onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Nama Produk</label>
-                <input 
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl w-full max-w-2xl mx-4">
+            <div className="flex items-center justify-between p-6 border-b">
+              <div className="flex items-center">
+                <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mr-3">
+                  <Package size={18} />
+                </div>
+                <h3 className="text-lg font-medium text-gray-800">
+                  {editingProduct ? 'Edit Produk' : 'Tambah Produk Baru'}
+                </h3>
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Kategori</label>
-                <input 
-                  type="text"
-                  name="category"
-                  value={formData.category}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Harga (Rp)</label>
-                <input 
-                  type="number"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Stok</label>
-                <input 
-                  type="number"
-                  name="stock"
-                  value={formData.stock}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-            </div>
-            
-            <div className="flex justify-end mt-6">
-              <button 
-                type="button"
+              <button
                 onClick={() => setShowForm(false)}
-                className="mr-3 px-4 py-2 border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-700"
+                className="text-gray-400 hover:text-gray-600"
               >
-                Batal
-              </button>
-              <button 
-                type="submit"
-                className="flex items-center justify-center bg-blue-500 text-white px-4 py-2 rounded-xl hover:bg-blue-600 transition-colors"
-              >
-                {editingProduct ? (
-                  <>
-                    <Edit size={18} className="mr-2" />
-                    <span>Update</span>
-                  </>
-                ) : (
-                  <>
-                    <Plus size={18} className="mr-2" />
-                    <span>Simpan</span>
-                  </>
-                )}
+                <X size={20} />
               </button>
             </div>
-          </form>
+
+            <form onSubmit={handleSubmit} className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Nama Produk</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Kategori</label>
+                  <input
+                    type="text"
+                    name="category"
+                    value={formData.category}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Harga (Rp)</label>
+                  <input
+                    type="number"
+                    name="price"
+                    value={formData.price}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Stok</label>
+                  <input
+                    type="number"
+                    name="stock"
+                    value={formData.stock}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Gambar Produk</label>
+                  <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-200 border-dashed rounded-xl hover:border-blue-500 transition-colors">
+                    <div className="space-y-1 text-center">
+                      {previewImage ? (
+                        <div className="relative">
+                          <img
+                            src={previewImage}
+                            alt="Preview"
+                            className="mx-auto h-32 w-32 object-cover rounded-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPreviewImage(null);
+                              setFormData({ ...formData, image: null });
+                            }}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex justify-center">
+                            <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
+                          </div>
+                          <div className="flex text-sm text-gray-600">
+                            <label
+                              htmlFor="file-upload"
+                              className="relative cursor-pointer bg-white rounded-md font-medium text-blue-500 hover:text-blue-600 focus-within:outline-none"
+                            >
+                              <span>Upload gambar</span>
+                              <input
+                                id="file-upload"
+                                name="file-upload"
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageChange}
+                                className="sr-only"
+                              />
+                            </label>
+                            <p className="pl-1">atau drag and drop</p>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            PNG, JPG, GIF sampai 2MB
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end mt-6 space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setShowForm(false)}
+                  className="px-4 py-2 border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-700"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="flex items-center justify-center bg-blue-500 text-white px-4 py-2 rounded-xl hover:bg-blue-600 transition-colors"
+                >
+                  {editingProduct ? (
+                    <>
+                      <Edit size={18} className="mr-2" />
+                      <span>Update</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus size={18} className="mr-2" />
+                      <span>Simpan</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
@@ -206,7 +327,7 @@ const Produk = () => {
             </div>
             <h3 className="text-lg font-medium text-gray-800">Statistik Produk</h3>
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-gray-50 p-4 rounded-xl">
               <p className="text-gray-500 text-sm mb-1">Total Produk</p>
@@ -226,7 +347,7 @@ const Produk = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white p-6 rounded-xl shadow-sm">
           <div className="flex items-center mb-6">
             <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mr-3">
@@ -234,7 +355,7 @@ const Produk = () => {
             </div>
             <h3 className="text-lg font-medium text-gray-800">Kategori Produk</h3>
           </div>
-          
+
           <div className="space-y-3">
             {categories.map(category => (
               <div key={category} className="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
@@ -247,13 +368,14 @@ const Produk = () => {
           </div>
         </div>
       </div>
-      
+
       <div className="bg-white p-6 rounded-xl shadow-sm overflow-hidden mt-8">
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead className="bg-gray-50">
               <tr>
                 <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">ID</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Gambar</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Nama</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Kategori</th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Harga</th>
@@ -265,19 +387,34 @@ const Produk = () => {
               {products.map(product => (
                 <tr key={product.id} className="hover:bg-gray-50">
                   <td className="py-3 px-4 text-gray-800">{product.id}</td>
+                  <td className="py-3 px-4">
+                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
+                      {product.image ? (
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                          <ImageIcon size={24} />
+                        </div>
+                      )}
+                    </div>
+                  </td>
                   <td className="py-3 px-4 text-gray-800">{product.name}</td>
                   <td className="py-3 px-4 text-gray-600">{product.category}</td>
                   <td className="py-3 px-4 text-gray-800">Rp {product.price.toLocaleString()}</td>
                   <td className="py-3 px-4 text-gray-800">{product.stock}</td>
                   <td className="py-3 px-4">
                     <div className="flex items-center">
-                      <button 
+                      <button
                         onClick={() => handleEditProduct(product)}
                         className="text-blue-600 hover:text-blue-800 p-1 mr-2"
                       >
                         <Edit size={16} />
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleDeleteProduct(product.id)}
                         className="text-gray-400 hover:text-red-500 p-1"
                       >
@@ -295,4 +432,4 @@ const Produk = () => {
   );
 };
 
-export default Produk; 
+export default Produk;
