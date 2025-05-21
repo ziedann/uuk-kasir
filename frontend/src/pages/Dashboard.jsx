@@ -123,6 +123,7 @@ const Dashboard = () => {
                 tick={{ fill: '#6B7280', fontSize: 12 }}
               />
               <Tooltip 
+                cursor={false}
                 contentStyle={{
                   backgroundColor: '#fff',
                   border: 'none',

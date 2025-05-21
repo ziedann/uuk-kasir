@@ -1,4 +1,3 @@
-// models/Product.js
 const mongoose = require('mongoose');
 
 const productSchema = new mongoose.Schema({
@@ -9,13 +8,17 @@ const productSchema = new mongoose.Schema({
   description: { 
     type: String 
   },
-  price: 
-  { type: Number,
+  price: { 
+    type: Number, 
     required: true 
   },
   stock: { 
     type: Number, 
     required: true 
+  },
+  imageUrl: { 
+    type: String,
+    required: false 
   },
   category: { 
     type: mongoose.Schema.Types.ObjectId, 

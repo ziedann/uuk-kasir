@@ -95,7 +95,7 @@ const Produk = () => {
   const categories = [...new Set(products.map(product => product.category))];
 
   return (
-    <div>
+    <div className="py-8 px-6">
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-2xl font-medium text-gray-800">Produk</h2>
         <button 
@@ -197,51 +197,7 @@ const Produk = () => {
           </form>
         </div>
       )}
-      
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-8">
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">ID</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Nama</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Kategori</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Harga</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Stok</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {products.map(product => (
-                <tr key={product.id} className="hover:bg-gray-50">
-                  <td className="py-3 px-4 text-gray-800">{product.id}</td>
-                  <td className="py-3 px-4 text-gray-800">{product.name}</td>
-                  <td className="py-3 px-4 text-gray-600">{product.category}</td>
-                  <td className="py-3 px-4 text-gray-800">Rp {product.price.toLocaleString()}</td>
-                  <td className="py-3 px-4 text-gray-800">{product.stock}</td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center">
-                      <button 
-                        onClick={() => handleEditProduct(product)}
-                        className="text-blue-600 hover:text-blue-800 p-1 mr-2"
-                      >
-                        <Edit size={16} />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteProduct(product.id)}
-                        className="text-gray-400 hover:text-red-500 p-1"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="bg-white p-6 rounded-xl shadow-sm">
           <div className="flex items-center mb-6">
@@ -289,6 +245,50 @@ const Produk = () => {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+      
+      <div className="bg-white p-6 rounded-xl shadow-sm overflow-hidden mt-8">
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">ID</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Nama</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Kategori</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Harga</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Stok</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {products.map(product => (
+                <tr key={product.id} className="hover:bg-gray-50">
+                  <td className="py-3 px-4 text-gray-800">{product.id}</td>
+                  <td className="py-3 px-4 text-gray-800">{product.name}</td>
+                  <td className="py-3 px-4 text-gray-600">{product.category}</td>
+                  <td className="py-3 px-4 text-gray-800">Rp {product.price.toLocaleString()}</td>
+                  <td className="py-3 px-4 text-gray-800">{product.stock}</td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center">
+                      <button 
+                        onClick={() => handleEditProduct(product)}
+                        className="text-blue-600 hover:text-blue-800 p-1 mr-2"
+                      >
+                        <Edit size={16} />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteProduct(product.id)}
+                        className="text-gray-400 hover:text-red-500 p-1"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
