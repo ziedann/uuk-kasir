@@ -76,11 +76,37 @@ const Dashboard = () => {
   };
 
   const processChartData = (orders) => {
-    const last6Months = [];
-    const today = new Date();
+    if (!orders || orders.length === 0) {
+      return [];
+    }
+
+    // Sort orders by date ascending to get the first transaction date
+    const sortedOrders = [...orders].sort((a, b) => 
+      new Date(a.createdAt) - new Date(b.createdAt)
+    );
+
+    // Get the first transaction date
+    const firstTransactionDate = new Date(sortedOrders[0].createdAt);
+    const currentDate = new Date();
     
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    // Calculate months between first transaction and now
+    const monthDiff = (currentDate.getFullYear() - firstTransactionDate.getFullYear()) * 12 
+      + (currentDate.getMonth() - firstTransactionDate.getMonth());
+    
+    // If less than 6 months, start from first transaction month
+    // If more than 6 months, take last 6 months
+    const monthsToShow = Math.min(6, monthDiff + 1);
+    const startMonth = Math.max(0, monthDiff - 5); // For last 6 months if more than 6 months of data
+
+    const chartData = [];
+    
+    for (let i = 0; i < monthsToShow; i++) {
+      const date = new Date(
+        firstTransactionDate.getFullYear(),
+        firstTransactionDate.getMonth() + startMonth + i,
+        1
+      );
+      
       const monthYear = format(date, 'MMM yy', { locale: id });
       
       const monthOrders = orders.filter(order => {
@@ -92,14 +118,14 @@ const Dashboard = () => {
 
       const totalSales = monthOrders.reduce((sum, order) => sum + order.total, 0);
       
-      last6Months.push({
+      chartData.push({
         date: monthYear,
         "Total Sales": totalSales,
         "Total Transactions": monthOrders.length
       });
     }
     
-    return last6Months;
+    return chartData;
   };
 
   const getStatusBadgeColor = (status) => {
@@ -219,7 +245,7 @@ const Dashboard = () => {
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: '#6B7280', fontSize: 12 }}
-                tickFormatter={(value) => `Rp ${(value/1000000).toFixed(1)}M`}
+                tickFormatter={(value) => `Rp ${(value/1000).toFixed(0)}K`}
               />
               <YAxis 
                 yAxisId="right" 
@@ -227,6 +253,8 @@ const Dashboard = () => {
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: '#6B7280', fontSize: 12 }}
+                domain={[0, 'auto']}
+                allowDecimals={false}
               />
               <Tooltip 
                 cursor={false}
@@ -238,9 +266,9 @@ const Dashboard = () => {
                 }}
                 formatter={(value, name) => {
                   if (name === "Total Sales") {
-                    return [`Rp ${(value/1000000).toFixed(1)}M`, 'Sales'];
+                    return [`Rp ${(value/1000).toFixed(0)}K`, 'Sales'];
                   }
-                  return [value, 'Transactions'];
+                  return [Math.round(value), 'Transactions'];
                 }}
                 labelStyle={{ color: '#6B7280', fontSize: 12 }}
               />
@@ -293,20 +321,20 @@ const Dashboard = () => {
                   </td>
                   <td className="py-3 px-4 text-gray-800">
                     Rp {transaction.total.toLocaleString()}
-                  </td>
-                  <td className="py-3 px-4">
+                </td>
+                <td className="py-3 px-4">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(transaction.status)}`}>
                       {transaction.status === 'completed' ? (
-                        <CheckCircle2 className="w-3 h-3 mr-1" />
+                    <CheckCircle2 className="w-3 h-3 mr-1" />
                       ) : transaction.status === 'cancelled' ? (
                         <XCircle className="w-3 h-3 mr-1" />
                       ) : (
-                        <Clock className="w-3 h-3 mr-1" />
+                    <Clock className="w-3 h-3 mr-1" />
                       )}
                       {formatStatus(transaction.status)}
-                    </span>
-                  </td>
-                </tr>
+                  </span>
+                </td>
+              </tr>
               ))}
             </tbody>
           </table>

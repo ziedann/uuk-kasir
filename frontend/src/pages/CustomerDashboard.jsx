@@ -177,7 +177,7 @@ const CustomerDashboard = () => {
                           disabled={product.stock === 0}
                         >
                           <Plus size={20} />
-                          <span className="text-base font-medium">Tambahkan ke keranjang</span>
+                          <span className="font-medium text-sm">Tambahkan ke keranjang</span>
                         </button>
                       )}
                     </div>
