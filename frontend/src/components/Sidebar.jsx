@@ -1,77 +1,121 @@
-import { Link, useLocation } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Home, ShoppingBag, ShoppingCart, LogOut, User } from 'lucide-react';
+import { 
+  LayoutDashboard, 
+  ShoppingCart, 
+  Package, 
+  BarChart, 
+  LogOut,
+  History,
+  Receipt,
+  User
+} from 'lucide-react';
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
-  const location = useLocation();
-  
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
   };
 
-  const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: <Home size={20} /> },
-    { name: 'Transaksi', path: '/transaksi', icon: <ShoppingCart size={20} /> },
-    { name: 'Produk', path: '/produk', icon: <ShoppingBag size={20} /> },
-  ];
+  // Menu items based on role
+  const getMenuItems = () => {
+    if (user.role === 'pelanggan') {
+      return [
+        {
+          path: '/customer-dashboard',
+          name: 'Dashboard',
+          icon: <LayoutDashboard size={20} />
+        },
+        {
+          path: '/riwayat',
+          name: 'Riwayat',
+          icon: <History size={20} />
+        }
+      ];
+    }
+
+    // Admin and Petugas menu
+    return [
+      {
+        path: '/dashboard',
+        name: 'Dashboard',
+        icon: <LayoutDashboard size={20} />
+      },
+      {
+        path: '/transaksi',
+        name: 'Transaksi',
+        icon: <ShoppingCart size={20} />
+      },
+      {
+        path: '/produk',
+        name: 'Produk',
+        icon: <Package size={20} />
+      },
+      {
+        path: '/laporan',
+        name: 'Laporan',
+        icon: <BarChart size={20} />
+      }
+    ];
+  };
 
   return (
-    <div className="fixed top-0 left-0 bg-white text-gray-700 w-64 h-screen flex flex-col shadow-sm border-r border-gray-100">
-      <div className="overflow-y-auto flex-1">
-        {/* App Logo/Name */}
-        <div className="p-6 border-b border-gray-100">
-          <h1 className="text-xl font-medium text-gray-800">KasirKita</h1>
+    <div className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200">
+      <div className="flex flex-col h-full">
+        {/* Logo */}
+        <div className="p-6">
+          <h1 className="text-2xl font-bold text-[#344293]">KasirKita</h1>
         </div>
-        
-        {/* Navigation Items */}
-        <nav className="flex-1 pt-6">
-          <ul>
-            {navItems.map((item) => (
-              <li key={item.name} className="mb-1 px-4">
-                <Link
+
+        {/* User Info */}
+        <div className="px-6 py-4 border-b border-gray-200">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 rounded-full bg-[#344293]/10 flex items-center justify-center">
+              <User size={20} className="text-[#344293]" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-900">{user?.username}</p>
+              <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 p-4">
+          <ul className="space-y-1">
+            {getMenuItems().map((item) => (
+              <li key={item.path}>
+                <NavLink
                   to={item.path}
-                  className={`flex items-center px-4 py-3 rounded-xl transition-colors ${
-                    location.pathname === item.path 
-                      ? 'bg-blue-50 text-blue-600' 
-                      : 'hover:bg-gray-50'
-                  }`}
+                  className={({ isActive }) =>
+                    `flex items-center space-x-3 px-4 py-2.5 rounded-lg transition-colors ${
+                      isActive
+                        ? 'bg-[#344293] text-white'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`
+                  }
                 >
-                  <span className={`mr-3 ${location.pathname === item.path ? 'text-blue-600' : 'text-gray-500'}`}>
-                    {item.icon}
-                  </span>
-                  <span className={location.pathname === item.path ? 'font-medium' : ''}>
-                    {item.name}
-                  </span>
-                </Link>
+                  {item.icon}
+                  <span>{item.name}</span>
+                </NavLink>
               </li>
             ))}
           </ul>
         </nav>
-      </div>
-      
-      {/* User Profile and Logout */}
-      <div className="border-t border-gray-100 p-4 m-4 mt-auto rounded-xl bg-gray-50">
-        <div className="flex items-center mb-4">
-          <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-3">
-            <User size={20} />
-          </div>
-          <div>
-            <p className="font-medium text-gray-800">{user?.username}</p>
-            <p className="text-sm text-gray-500">{user?.role}</p>
-          </div>
+
+        {/* Logout Button */}
+        <div className="p-4 border-t border-gray-200">
+          <button
+            onClick={handleLogout}
+            className="flex items-center space-x-3 text-gray-700 hover:text-red-600 w-full px-4 py-2.5 rounded-lg transition-colors hover:bg-red-50"
+          >
+            <LogOut size={20} />
+            <span>Logout</span>
+          </button>
         </div>
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center justify-center bg-white border border-gray-200 text-gray-700 py-2 px-4 rounded-xl hover:bg-gray-50 transition-colors"
-        >
-          <LogOut size={18} className="mr-2 text-gray-500" />
-          <span>Logout</span>
-        </button>
       </div>
     </div>
   );

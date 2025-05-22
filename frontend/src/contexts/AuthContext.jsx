@@ -9,12 +9,16 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
     const fetchUser = async () => {
       try {
-        const userData = await getCurrentUser();
-        setUser(userData);
+        if (token) {
+          const userData = await getCurrentUser();
+          setUser(userData);
+        }
       } catch (error) {
         console.error('Error fetching user:', error);
+        localStorage.removeItem('token');
       } finally {
         setLoading(false);
       }
@@ -27,6 +31,10 @@ export const AuthProvider = ({ children }) => {
     try {
       setError(null);
       const response = await loginService(credentials);
+      
+      // Store token in localStorage
+      localStorage.setItem('token', response.token);
+      
       setUser(response.user);
       return response;
     } catch (error) {
@@ -38,9 +46,14 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await logoutService();
+      // Clear token from localStorage
+      localStorage.removeItem('token');
       setUser(null);
     } catch (error) {
       console.error('Logout error:', error);
+      // Still remove token and user on error
+      localStorage.removeItem('token');
+      setUser(null);
       throw error;
     }
   };

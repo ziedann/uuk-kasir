@@ -5,8 +5,9 @@ import { register, testConnection } from '../services/authService';
 const Register = () => {
   const [userData, setUserData] = useState({
     username: '',
+    email: '',
     password: '',
-    role: 'petugas', // Default role
+    confirmPassword: ''
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -27,7 +28,7 @@ const Register = () => {
       } catch (err) {
         console.error('Server connection check failed:', err);
         setIsServerConnected(false);
-        setError('Cannot connect to server. Please make sure the backend is running.');
+        setError('Tidak dapat terhubung ke server. Pastikan backend sedang berjalan.');
       }
     };
     
@@ -37,6 +38,20 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    // Validate password match
+    if (userData.password !== userData.confirmPassword) {
+      setError('Password tidak cocok');
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(userData.email)) {
+      setError('Format email tidak valid');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -46,15 +61,17 @@ const Register = () => {
           await testConnection();
           setIsServerConnected(true);
         } catch (err) {
-          throw new Error('Cannot connect to server. Please make sure the backend is running.');
+          throw new Error('Tidak dapat terhubung ke server. Pastikan backend sedang berjalan.');
         }
       }
       
-      await register(userData);
-      navigate('/login', { state: { message: 'Registration successful! Please login.' } });
+      // Remove confirmPassword before sending to backend
+      const { confirmPassword, ...registerData } = userData;
+      await register(registerData);
+      navigate('/login', { state: { message: 'Registrasi berhasil! Silakan login.' } });
     } catch (err) {
       console.error('Registration submission error:', err);
-      setError(err.message || 'Registration failed. Please try again.');
+      setError(err.message || 'Registrasi gagal. Silakan coba lagi.');
       
       // If it's a connection error, update the server connection status
       if (err.message.includes('connect to the server') || err.message.includes('Failed to fetch')) {
@@ -68,11 +85,11 @@ const Register = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold text-center mb-6">Register for KasirKita</h1>
+        <h1 className="text-2xl font-bold text-center mb-6">Daftar KasirKita</h1>
         
         {!isServerConnected && (
           <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
-            Warning: Cannot connect to the backend server. Please make sure it's running at http://localhost:3000
+            Peringatan: Tidak dapat terhubung ke server backend. Pastikan server berjalan di http://localhost:5000
           </div>
         )}
         
@@ -82,8 +99,8 @@ const Register = () => {
           </div>
         )}
         
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
             <label htmlFor="username" className="block text-gray-700 font-medium mb-2">
               Username
             </label>
@@ -93,12 +110,27 @@ const Register = () => {
               name="username"
               value={userData.username}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#344293]"
               required
             />
           </div>
           
-          <div className="mb-4">
+          <div>
+            <label htmlFor="email" className="block text-gray-700 font-medium mb-2">
+              Email
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={userData.email}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#344293]"
+              required
+            />
+          </div>
+          
+          <div>
             <label htmlFor="password" className="block text-gray-700 font-medium mb-2">
               Password
             </label>
@@ -108,39 +140,40 @@ const Register = () => {
               name="password"
               value={userData.password}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#344293]"
               required
+              minLength={6}
             />
           </div>
           
-          <div className="mb-6">
-            <label htmlFor="role" className="block text-gray-700 font-medium mb-2">
-              Role
+          <div>
+            <label htmlFor="confirmPassword" className="block text-gray-700 font-medium mb-2">
+              Konfirmasi Password
             </label>
-            <select
-              id="role"
-              name="role"
-              value={userData.role}
+            <input
+              type="password"
+              id="confirmPassword"
+              name="confirmPassword"
+              value={userData.confirmPassword}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="petugas">Petugas</option>
-              <option value="admin">Admin</option>
-            </select>
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#344293]"
+              required
+              minLength={6}
+            />
           </div>
           
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50"
+            className="w-full bg-[#344293] text-white py-2 px-4 rounded-md hover:bg-[#344293]/90 focus:outline-none focus:ring-2 focus:ring-[#344293] focus:ring-opacity-50 disabled:opacity-50"
           >
-            {isLoading ? 'Registering...' : 'Register'}
+            {isLoading ? 'Mendaftar...' : 'Daftar'}
           </button>
         </form>
         
         <p className="mt-4 text-center text-gray-600">
-          Already have an account?{' '}
-          <Link to="/login" className="text-blue-500 hover:text-blue-700">
+          Sudah punya akun?{' '}
+          <Link to="/login" className="text-[#344293] hover:text-[#344293]/80">
             Login
           </Link>
         </p>
@@ -149,4 +182,4 @@ const Register = () => {
   );
 };
 
-export default Register; 
+export default Register;

@@ -1,52 +1,48 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Package, Plus, Edit, Trash2, BarChart2, Tag, Image as ImageIcon, Upload, X } from 'lucide-react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+
+const API_URL = 'http://localhost:5000/api';
+const BASE_URL = 'http://localhost:5000';
 
 const Produk = () => {
-  const [products, setProducts] = useState([
-    {
-      id: 1,
-      name: 'Kopi Hitam',
-      price: 10000,
-      stock: 50,
-      category: 'Minuman',
-      image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=100&h=100&fit=crop'
-    },
-    {
-      id: 2,
-      name: 'Kopi Susu',
-      price: 15000,
-      stock: 45,
-      category: 'Minuman',
-      image: 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=100&h=100&fit=crop'
-    },
-    {
-      id: 3,
-      name: 'Teh Manis',
-      price: 8000,
-      stock: 60,
-      category: 'Minuman',
-      image: 'https://images.unsplash.com/photo-1564890369478-c89ca6d9cde9?w=100&h=100&fit=crop'
-    },
-    {
-      id: 4,
-      name: 'Roti Bakar',
-      price: 12000,
-      stock: 25,
-      category: 'Makanan',
-      image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=100&h=100&fit=crop'
-    }
-  ]);
-
+  const navigate = useNavigate();
+  const [products, setProducts] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [showImagePreview, setShowImagePreview] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     price: '',
     stock: '',
     category: '',
-    image: null
+    image: null,
+    description: ''
   });
   const [previewImage, setPreviewImage] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch products when component mounts
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/products`);
+      setProducts(response.data);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      if (error.response?.status === 401) {
+        alert('Sesi anda telah berakhir. Silahkan login kembali');
+        navigate('/login');
+      } else {
+        alert('Gagal mengambil data produk');
+      }
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -59,6 +55,10 @@ const Produk = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (file.size > 2 * 1024 * 1024) { // 2MB limit
+        alert('Ukuran gambar terlalu besar. Maksimal 2MB');
+        return;
+      }
       setFormData({
         ...formData,
         image: file
@@ -72,16 +72,22 @@ const Produk = () => {
     }
   };
 
-  const handleAddProduct = () => {
-    setEditingProduct(null);
+  const resetForm = () => {
     setFormData({
       name: '',
       price: '',
       stock: '',
       category: '',
-      image: null
+      image: null,
+      description: ''
     });
     setPreviewImage(null);
+    setEditingProduct(null);
+    setShowForm(false);
+  };
+
+  const handleAddProduct = () => {
+    resetForm();
     setShowForm(true);
   };
 
@@ -91,65 +97,113 @@ const Produk = () => {
       name: product.name,
       price: product.price,
       stock: product.stock,
-      category: product.category,
-      image: null
+      category: product.category?.name || '',
+      image: null,
+      description: product.description || ''
     });
-    setPreviewImage(product.image);
+    setPreviewImage(product.imageUrl);
     setShowForm(true);
   };
 
-  const handleDeleteProduct = (id) => {
+  const handleDeleteProduct = async (id) => {
     if (window.confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
-      setProducts(products.filter(product => product.id !== id));
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          alert('Anda harus login terlebih dahulu');
+          navigate('/login');
+          return;
+        }
+
+        await axios.delete(`${API_URL}/products/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        await fetchProducts(); // Refresh products list
+        alert('Produk berhasil dihapus');
+      } catch (error) {
+        console.error('Error deleting product:', error);
+        if (error.response?.status === 401) {
+          alert('Sesi anda telah berakhir. Silahkan login kembali');
+          navigate('/login');
+        } else {
+          alert('Gagal menghapus produk');
+        }
+      }
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
-    if (!formData.name || !formData.price || !formData.stock || !formData.category) {
-      alert('Semua field harus diisi');
-      return;
-    }
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Anda harus login terlebih dahulu');
+        navigate('/login');
+        return;
+      }
 
-    // In a real app, you would upload the image to your server here
-    // For now, we'll use the preview image URL as the image path
-    const imagePath = previewImage || '/images/products/placeholder.jpg';
+      if (!formData.name || !formData.price || !formData.stock || !formData.category) {
+        alert('Semua field harus diisi');
+        return;
+      }
 
-    if (editingProduct) {
-      // Update existing product
-      setProducts(products.map(product =>
-        product.id === editingProduct.id
-          ? {
-            ...product,
-            name: formData.name,
-            price: parseFloat(formData.price),
-            stock: parseInt(formData.stock),
-            category: formData.category,
-            image: imagePath
-          }
-          : product
-      ));
-    } else {
-      // Add new product
-      const newProduct = {
-        id: products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1,
-        name: formData.name,
-        price: parseFloat(formData.price),
-        stock: parseInt(formData.stock),
-        category: formData.category,
-        image: imagePath
+      // Create FormData object for multipart/form-data
+      const productData = new FormData();
+      productData.append('name', formData.name);
+      productData.append('price', parseFloat(formData.price));
+      productData.append('stock', parseInt(formData.stock));
+      productData.append('category', formData.category);
+      productData.append('description', formData.description);
+      
+      // Append image if exists
+      if (formData.image) {
+        productData.append('image', formData.image);
+      }
+
+      const headers = {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'multipart/form-data'
       };
 
-      setProducts([...products, newProduct]);
-    }
+      if (editingProduct) {
+        // Update existing product
+        await axios.put(
+          `${API_URL}/products/${editingProduct._id}`,
+          productData,
+          { headers }
+        );
+      } else {
+        // Add new product
+        await axios.post(
+          `${API_URL}/products`,
+          productData,
+          { headers }
+        );
+      }
 
-    setShowForm(false);
-    setEditingProduct(null);
-    setPreviewImage(null);
+      await fetchProducts(); // Refresh products list
+      resetForm(); // Reset form and close it
+      alert(editingProduct ? 'Produk berhasil diupdate' : 'Produk berhasil ditambahkan');
+    } catch (error) {
+      console.error('Error saving product:', error);
+      if (error.response?.status === 401) {
+        alert('Sesi anda telah berakhir. Silahkan login kembali');
+        navigate('/login');
+      } else {
+        alert('Gagal menyimpan produk: ' + (error.response?.data?.message || error.message));
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const categories = [...new Set(products.map(product => product.category))];
+  const categories = [...new Set(products.map(product => 
+    product.category?.name || product.category || 'Uncategorized'
+  ))];
 
   return (
     <div className="py-8 px-6">
@@ -157,7 +211,7 @@ const Produk = () => {
         <h2 className="text-2xl font-medium text-gray-800">Produk</h2>
         <button
           onClick={handleAddProduct}
-          className="flex items-center justify-center bg-blue-500 text-white px-4 py-2 rounded-xl hover:bg-blue-600 transition-colors"
+          className="flex items-center justify-center bg-[#344293] text-white px-4 py-2 rounded-xl hover:bg-[#344293]/90 transition-colors"
         >
           <Plus size={18} className="mr-2" />
           <span>Tambah Produk</span>
@@ -170,7 +224,7 @@ const Produk = () => {
           <div className="bg-white rounded-xl w-full max-w-2xl mx-4">
             <div className="flex items-center justify-between p-6 border-b">
               <div className="flex items-center">
-                <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mr-3">
+                <div className="w-8 h-8 rounded-lg bg-[#344293]/10 text-[#344293] flex items-center justify-center mr-3">
                   <Package size={18} />
                 </div>
                 <h3 className="text-lg font-medium text-gray-800">
@@ -236,6 +290,17 @@ const Produk = () => {
                 </div>
 
                 <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Deskripsi</label>
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    rows="3"
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Gambar Produk</label>
                   <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-200 border-dashed rounded-xl hover:border-blue-500 transition-colors">
                     <div className="space-y-1 text-center">
@@ -294,14 +359,18 @@ const Produk = () => {
                   type="button"
                   onClick={() => setShowForm(false)}
                   className="px-4 py-2 border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-700"
+                  disabled={loading}
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="flex items-center justify-center bg-blue-500 text-white px-4 py-2 rounded-xl hover:bg-blue-600 transition-colors"
+                  className="flex items-center justify-center bg-[#344293] text-white px-4 py-2 rounded-xl hover:bg-[#344293]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={loading}
                 >
-                  {editingProduct ? (
+                  {loading ? (
+                    <span>Menyimpan...</span>
+                  ) : editingProduct ? (
                     <>
                       <Edit size={18} className="mr-2" />
                       <span>Update</span>
@@ -319,10 +388,33 @@ const Produk = () => {
         </div>
       )}
 
+      {/* Image Preview Modal */}
+      {showImagePreview && selectedImage && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={() => setShowImagePreview(false)}
+        >
+          <div className="relative max-w-3xl max-h-[90vh] mx-4">
+            <button
+              onClick={() => setShowImagePreview(false)}
+              className="absolute -top-4 -right-4 bg-white rounded-full p-2 text-gray-600 hover:text-gray-900 shadow-lg"
+            >
+              <X size={20} />
+            </button>
+            <img
+              src={selectedImage}
+              alt="Preview"
+              className="rounded-lg max-h-[85vh] object-contain bg-white p-2"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="bg-white p-6 rounded-xl shadow-sm">
           <div className="flex items-center mb-6">
-            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mr-3">
+            <div className="w-8 h-8 rounded-lg bg-[#344293]/10 text-[#344293] flex items-center justify-center mr-3">
               <BarChart2 size={18} />
             </div>
             <h3 className="text-lg font-medium text-gray-800">Statistik Produk</h3>
@@ -350,7 +442,7 @@ const Produk = () => {
 
         <div className="bg-white p-6 rounded-xl shadow-sm">
           <div className="flex items-center mb-6">
-            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mr-3">
+            <div className="w-8 h-8 rounded-lg bg-[#344293]/10 text-[#344293] flex items-center justify-center mr-3">
               <Tag size={18} />
             </div>
             <h3 className="text-lg font-medium text-gray-800">Kategori Produk</h3>
@@ -360,8 +452,10 @@ const Produk = () => {
             {categories.map(category => (
               <div key={category} className="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
                 <span className="text-gray-800">{category}</span>
-                <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">
-                  {products.filter(p => p.category === category).length} produk
+                <span className="bg-[#344293]/10 text-[#344293] px-3 py-1 rounded-full text-xs font-medium">
+                  {products.filter(p => 
+                    (p.category?.name || p.category) === category
+                  ).length} produk
                 </span>
               </div>
             ))}
@@ -385,13 +479,21 @@ const Produk = () => {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {products.map(product => (
-                <tr key={product.id} className="hover:bg-gray-50">
-                  <td className="py-3 px-4 text-gray-800">{product.id}</td>
+                <tr key={product._id} className="hover:bg-gray-50">
+                  <td className="py-3 px-4 text-gray-800">{product._id}</td>
                   <td className="py-3 px-4">
-                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
-                      {product.image ? (
+                    <div 
+                      className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => {
+                        if (product.imageUrl) {
+                          setSelectedImage(BASE_URL + product.imageUrl);
+                          setShowImagePreview(true);
+                        }
+                      }}
+                    >
+                      {product.imageUrl ? (
                         <img
-                          src={product.image}
+                          src={BASE_URL + product.imageUrl}
                           alt={product.name}
                           className="w-full h-full object-cover"
                         />
@@ -403,19 +505,19 @@ const Produk = () => {
                     </div>
                   </td>
                   <td className="py-3 px-4 text-gray-800">{product.name}</td>
-                  <td className="py-3 px-4 text-gray-600">{product.category}</td>
+                  <td className="py-3 px-4 text-gray-600">{product.category?.name || product.category || 'Uncategorized'}</td>
                   <td className="py-3 px-4 text-gray-800">Rp {product.price.toLocaleString()}</td>
                   <td className="py-3 px-4 text-gray-800">{product.stock}</td>
                   <td className="py-3 px-4">
                     <div className="flex items-center">
                       <button
                         onClick={() => handleEditProduct(product)}
-                        className="text-blue-600 hover:text-blue-800 p-1 mr-2"
+                        className="text-[#344293] hover:text-[#344293]/80 p-1 mr-2"
                       >
                         <Edit size={16} />
                       </button>
                       <button
-                        onClick={() => handleDeleteProduct(product.id)}
+                        onClick={() => handleDeleteProduct(product._id)}
                         className="text-gray-400 hover:text-red-500 p-1"
                       >
                         <Trash2 size={16} />

@@ -79,7 +79,7 @@ const Login = () => {
               name="username"
               value={credentials.username}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#344293]"
               required
             />
           </div>
@@ -94,7 +94,7 @@ const Login = () => {
               name="password"
               value={credentials.password}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#344293]"
               required
             />
           </div>
@@ -102,7 +102,7 @@ const Login = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50"
+            className="w-full bg-[#344293] text-white py-2 px-4 rounded-md hover:bg-[#344293]/90 focus:outline-none focus:ring-2 focus:ring-[#344293] focus:ring-opacity-50 disabled:opacity-50"
           >
             {isLoading ? 'Logging in...' : 'Login'}
           </button>
@@ -110,7 +110,7 @@ const Login = () => {
         
         <p className="mt-4 text-center text-gray-600">
           Don't have an account?{' '}
-          <Link to="/register" className="text-blue-500 hover:text-blue-700">
+          <Link to="/register" className="text-[#344293] hover:text-[#344293]/80">
             Register
           </Link>
         </p>
